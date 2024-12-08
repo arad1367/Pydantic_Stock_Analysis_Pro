@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --background: #ffffff;
+            --text: #1a202c;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        .dark {
+            --background: #0f172a;
+            --text: #f8fafc;
+            --card-bg: #1e293b;
+            --border: #334155;
+        }
+
+        .dark body {
+            background: linear-gradient(to bottom right, #0f172a, #1e293b);
+        }
+
+        .social-buttons {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 50;
+        }
+
+        .social-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .social-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .github-btn { background-color: #24292e; }
+        .huggingface-btn { background-color: #ff9d00; }
+        .website-btn { background-color: #0070f3; }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            cursor: pointer;
+        }
+
+        .card-hover {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .loading-spinner {
+            border-color: var(--border);
+            border-top-color: #3498db;
+        }
+
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .dark select {
+            color: #22c55e !important;
+        }
+
+        .dark select option {
+            background-color: #1e293b;
+            color: #22c55e;
+        }
+
+        .dark input {
+            color: #22c55e !important;
+        }
+
+        .dark strong {
+            color: #22c55e;
+        }
+
+        .dark label {
+            color: #22c55e !important;
+        }
+
+        .dark .result-text {
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-900 min-h-screen">
+    <button id="themeToggle" class="theme-toggle">
+        <i class="fas fa-sun text-yellow-500 dark:hidden"></i>
+        <i class="fas fa-moon text-blue-300 hidden dark:block"></i>
+    </button>
+
+    <div class="social-buttons">
+        <a href="https://github.com/arad1367" target="_blank" class="social-button github-btn" title="GitHub">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://huggingface.co/" target="_blank" class="social-button huggingface-btn" title="Hugging Face">
+            <i class="fas fa-robot"></i>
+        </a>
+        <a href="https://arad1367.github.io/pejman-ebrahimi/" target="_blank" class="social-button website-btn" title="Personal Website">
+            <i class="fas fa-globe"></i>
+        </a>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="main-title text-4xl font-bold mb-2 text-center text-gray-800">Stock Analysis AI - By Pejman Ebrahimi</h1>
+            <p class="subtitle text-center text-gray-600 mb-8">Powered by Groq AI Models</p>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 card-hover">
+                <form id="analysisForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="model">
+                            Select AI Model
+                        </label>
+                        <select id="model" name="model" 
+                                class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                            {% for model_id, model_name in models.items() %}
+                            <option value="{{ model_id }}">{{ model_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="query">
+                            Stock Query
+                        </label>
+                        <input type="text" id="query" name="query" 
+                               class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+                               placeholder="What is Apple's current stock price?">
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-all duration-300">
+                        Analyze Stock
+                    </button>
+                </form>
+            </div>
+            
+            <div id="loadingSpinner" class="loading-spinner hidden"></div>
+            
+            <div id="results" class="space-y-6">
+                <div id="priceCard" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hidden card-hover fade-in">
+                    <h2 class="section-header text-xl font-bold mb-4 text-gray-800">Current Stock Information</h2>
+                    <div id="priceContent" class="result-text"></div>
+                </div>
+                
+                <div id="adviceCard" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hidden card-hover fade-in">
+                    <h2 class="section-header text-xl font-bold mb-4 text-gray-800">Investment Advice</h2>
+                    <div id="adviceContent" class="result-text"></div>
+                </div>
+                
+                <div id="technicalCard" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hidden card-hover fade-in">
+                    <h2 class="section-header text-xl font-bold mb-4 text-gray-800">Technical Analysis</h2>
+                    <div id="technicalContent" class="result-text"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        });
+
+        document.getElementById('analysisForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const results = document.querySelectorAll('#results > div');
+            
+            loadingSpinner.classList.remove('hidden');
+            results.forEach(div => div.classList.add('hidden'));
+            
+            const query = document.getElementById('query').value;
+            const model = document.getElementById('model').value;
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `query=${encodeURIComponent(query)}&model=${encodeURIComponent(model)}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const priceCard = document.getElementById('priceCard');
+                    priceCard.classList.remove('hidden');
+                    priceCard.querySelector('#priceContent').innerHTML = `
+                        <p class="text-lg mb-2"><strong>Symbol:</strong> ${data.price_data.symbol}</p>
+                        <p class="text-lg mb-2"><strong>Price:</strong> $${data.price_data.price} ${data.price_data.currency}</p>
+                        <p class="mt-2">${data.price_data.message}</p>
+                    `;
+                    
+                    const adviceCard = document.getElementById('adviceCard');
+                    adviceCard.classList.remove('hidden');
+                    adviceCard.querySelector('#adviceContent').innerHTML = `
+                        <p class="mb-2"><strong>Analysis:</strong> ${data.advice_data.analysis}</p>
+                        <p class="mb-2"><strong>Recommendation:</strong> ${data.advice_data.recommendation}</p>
+                        <p class="mb-2"><strong>Confidence:</strong> ${data.advice_data.confidence}%</p>
+                        <p><strong>Risk Level:</strong> ${data.advice_data.risk_level}</p>
+                    `;
+                    
+                    const technicalCard = document.getElementById('technicalCard');
+                    technicalCard.classList.remove('hidden');
+                    technicalCard.querySelector('#technicalContent').innerHTML = `
+                        <p class="mb-2"><strong>Future Outlook:</strong> ${data.technical_data.future_outlook}</p>
+                        <p class="mb-2"><strong>Trading Volume:</strong> ${data.technical_data.trading_volume.toLocaleString()}</p>
+                        <div class="mt-4">
+                            <p class="font-bold">Support Levels:</p>
+                            <ul class="list-disc list-inside">
+                                ${data.technical_data.support_levels.map(level => `<li>$${level}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="mt-4">
+                            <p class="font-bold">Resistance Levels:</p>
+                            <ul class="list-disc list-inside">
+                                ${data.technical_data.resistance_levels.map(level => `<li>$${level}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

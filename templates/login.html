@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Stock Analysis AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="bg-white rounded-xl shadow-2xl p-8 card-hover">
+            <div class="text-center">
+                <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Stock Analysis AI</h2>
+                <p class="text-sm text-gray-600 mb-8">Enter your Groq API key to continue</p>
+            </div>
+            
+            {% if error %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4" role="alert">
+                <p class="text-sm">{{ error }}</p>
+            </div>
+            {% endif %}
+            
+            <form method="POST" action="{{ url_for('login') }}" class="space-y-6">
+                <div>
+                    <label for="api_key" class="block text-sm font-medium text-gray-700">
+                        API Key
+                    </label>
+                    <input id="api_key" name="api_key" type="password" required 
+                           class="input-focus appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm mt-1"
+                           placeholder="gsk_xxxxxxxxxxxxxxx">
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="button-effect group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Continue to Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

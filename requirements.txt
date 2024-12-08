@@ -1,0 +1,4 @@
+flask
+pydantic-ai
+yfinance
+nest-asyncio
